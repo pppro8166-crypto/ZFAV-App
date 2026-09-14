@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>ZFAV</title>
+<style>
+  :root {
+    --canvas: #15171C;
+    --surface: #1D2027;
+    --surface-raised: #23262E;
+    --border: #2C303A;
+    --border-strong: #3A3F4B;
+    --text: #EDEEF1;
+    --text-muted: #8B909B;
+    --accent: #D9A441;
+    --accent-dim: #8A6C2F;
+    --complete: #5B8C6E;
+    --not-complete: #B9713D;
+    --danger: #C1594F;
+    --radius: 6px;
+    --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--text);
+    font-family: var(--font-ui);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #app {
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .hidden { display: none !important; }
+
+  /* ---------- Login screen ---------- */
+  #login-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 32px 24px;
+  }
+
+  .wordmark {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    letter-spacing: 0.28em;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  .wordmark-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 40px;
+  }
+
+  .field {
+    margin-bottom: 18px;
+  }
+
+  .field label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  .id-input-wrap {
+    display: flex;
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .id-prefix {
+    padding: 12px 0 12px 14px;
+    font-family: var(--font-mono);
+    color: var(--accent);
+    font-size: 15px;
+    white-space: nowrap;
+  }
+
+  .id-input-wrap input,
+  .field input,
+  .field select {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-size: 15px;
+    padding: 12px 14px;
+    font-family: var(--font-ui);
+  }
+
+  .id-input-wrap input {
+    padding-left: 2px;
+    font-family: var(--font-mono);
+  }
+
+  .field input,
+  .field select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .field select {
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  button.primary {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: #1A1206;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+
+  button.primary:active { opacity: 0.85; }
+
+  button.secondary {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+  .error-text {
+    color: var(--danger);
+    font-size: 13px;
+    margin-top: 10px;
+    min-height: 16px;
+  }
+
+  /* ---------- App shell (post-login) ---------- */
+  #app-screen { flex: 1; display: flex; flex-direction: column; }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .topbar .who {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar .name { font-size: 15px; font-weight: 600; }
+  .topbar .role {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+    margin-top: 2px;
+  }
+
+  .logout-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 7px 12px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 13px 0;
+    font-size: 14px;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+  }
+
+  .tab.active {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+  }
+
+  .panel { padding: 18px 20px 40px; }
+
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 22px 0 10px;
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  /* ---------- Task cards ---------- */
+  .task-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+
+  .task-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .task-meta {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+
+  .status-toggle {
+    display: flex;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    overflow: hidden;
+    font-size: 13px;
+  }
+
+  .status-toggle button {
+    flex: 1;
+    padding: 9px 0;
+    border: none;
+    background: var(--surface-raised);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: var(--font-ui);
+  }
+
+  .status-toggle button.selected.complete {
+    background: var(--complete);
+    color: #0E1712;
+    font-weight: 600;
+  }
+  .status-toggle button.selected.not-complete {
+    background: var(--not-complete);
+    color: #1A0F06;
+    font-weight: 600;
+  }
+
+  .empty-state {
+    color: var(--text-muted);
+    font-size: 14px;
+    padding: 24px 4px;
+    text-align: center;
+  }
+
+  /* ---------- Team / Executive panel ---------- */
+  .member-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 8px;
+  }
+
+  .member-id {
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+
+  .member-role {
+    font-size: 12px;
+    color: var(--accent);
+    background: rgba(217, 164, 65, 0.12);
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+
+  .new-member-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--surface);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius);
+    color: var(--accent);
+    font-size: 14px;
+    cursor: pointer;
+    margin-bottom: 18px;
+  }
+
+  #create-member-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 18px;
+  }
+
+  #create-member-form .field:last-of-type { margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ---------- LOGIN SCREEN ---------- -->
+  <div id="login-screen">
+    <div class="wordmark">Z F A V</div>
+    <div class="wordmark-sub">Team management — sign in</div>
+
+    <div class="field">
+      <label for="login-name">Member ID</label>
+      <div class="id-input-wrap">
+        <span class="id-prefix">Zfav_</span>
+        <input id="login-name" type="text" placeholder="Full_Name" autocapitalize="none" autocomplete="off" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="login-password">Password</label>
+      <input id="login-password" type="password" placeholder="••••••••" />
+    </div>
+
+    <button class="primary" id="login-btn">Log in</button>
+    <div class="error-text" id="login-error"></div>
+  </div>
+
+  <!-- ---------- MAIN APP SCREEN ---------- -->
+  <div id="app-screen" class="hidden">
+    <div class="topbar">
+      <div class="who">
+        <span class="name" id="current-name">—</span>
+        <span class="role" id="current-role">—</span>
+      </div>
+      <button class="logout-btn" id="logout-btn">Log out</button>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="tasks">My Tasks</div>
+      <div class="tab hidden" data-tab="team" id="team-tab">Team</div>
+    </div>
+
+    <!-- My Tasks panel -->
+    <div class="panel" id="tasks-panel">
+      <div class="section-label">Not completed</div>
+      <div id="not-completed-list"></div>
+
+      <div class="section-label">Complete</div>
+      <div id="completed-list"></div>
+    </div>
+
+    <!-- Team / Executive panel -->
+    <div class="panel hidden" id="team-panel">
+      <button class="new-member-btn" id="show-create-form-btn">+ New member</button>
+
+      <div id="create-member-form" class="hidden">
+        <div class="field">
+          <label for="new-fullname">Full name</label>
+          <input id="new-fullname" type="text" placeholder="e.g. Rahul Sharma" />
+        </div>
+        <div class="field">
+          <label for="new-role">Role</label>
+          <select id="new-role">
+            <option value="Chief">Chief</option>
+            <option value="Manager">Manager</option>
+            <option value="Animator">Animator</option>
+            <option value="Designer">Designer</option>
+            <option value="Developer">Developer</option>
+            <option value="Guest">Guest</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="new-password">Password</label>
+          <input id="new-password" type="password" placeholder="Set a password" />
+        </div>
+        <button class="primary" id="create-member-btn">Create member</button>
+        <button class="secondary" id="cancel-create-btn">Cancel</button>
+        <div class="error-text" id="create-member-error"></div>
+      </div>
+
+      <div class="section-label">All members</div>
+      <div id="member-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ---------- Config ----------
+  // Same-origin by default. Change if the frontend is hosted separately from the API.
+  const API_BASE = '';
+
+  // ---------- State ----------
+  let token = localStorage.getItem('zfav_token') || null;
+  let currentUser = JSON.parse(localStorage.getItem('zfav_user') || 'null');
+  const EXECUTIVE_ROLES = ['Chief', 'Manager'];
+
+  // ---------- Helpers ----------
+  async function api(path, options = {}) {
+    const res = await fetch(API_BASE + path, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: 'Bearer ' + token } : {}),
+        ...(options.headers || {}),
+      },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+    return data;
+  }
+
+  function showScreen(loggedIn) {
+    document.getElementById('login-screen').classList.toggle('hidden', loggedIn);
+    document.getElementById('app-screen').classList.toggle('hidden', !loggedIn);
+  }
+
+  function isExecutive() {
+    return currentUser && EXECUTIVE_ROLES.includes(currentUser.role);
+  }
+
+  // ---------- Login ----------
+  document.getElementById('login-btn').addEventListener('click', async () => {
+    const nameInput = document.getElementById('login-name').value.trim().replace(/\s+/g, '_');
+    const password = document.getElementById('login-password').value;
+    const errorEl = document.getElementById('login-error');
+    errorEl.textContent = '';
+
+    if (!nameInput || !password) {
+      errorEl.textContent = 'Enter your name and password.';
+      return;
+    }
+
+    const memberId = 'Zfav_' + nameInput;
+
+    try {
+      const data = await api('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ memberId, password }),
+      });
+      token = data.token;
+      currentUser = data.member;
+      localStorage.setItem('zfav_token', token);
+      localStorage.setItem('zfav_user', JSON.stringify(currentUser));
+      enterApp();
+    } catch (err) {
+      errorEl.textContent = err.message;
+    }
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', () => {
+    token = null;
+    currentUser = null;
+    localStorage.removeItem('zfav_token');
+    localStorage.removeItem('zfav_user');
+    showScreen(false);
+  });
+
+  // ---------- Tabs ----------
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const target = tab.dataset.tab;
+      document.getElementById('tasks-panel').classList.toggle('hidden', target !== 'tasks');
+      document.getElementById('team-panel').classList.toggle('hidden', target !== 'team');
+      if (target === 'team') loadMembers();
+    });
+  });
+
+  // ---------- Enter app after login ----------
+  function enterApp() {
+    document.getElementById('current-name').textContent = currentUser.fullName;
+    document.getElementById('current-role').textContent = currentUser.memberId;
+    document.getElementById('team-tab').classList.toggle('hidden', !isExecutive());
+    showScreen(true);
+    loadTasks();
+  }
+
+  // ---------- Tasks ----------
+  async function loadTasks() {
+    try {
+      const data = await api('/api/tasks/mine');
+      renderTasks(data.tasks || []);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  function renderTasks(tasks) {
+    const notCompletedEl = document.getElementById('not-completed-list');
+    const completedEl = document.getElementById('completed-list');
+    notCompletedEl.innerHTML = '';
+    completedEl.innerHTML = '';
+
+    const notCompleted = tasks.filter(t => t.status === 'Not completed');
+    const completed = tasks.filter(t => t.status === 'Complete');
+
+    if (notCompleted.length === 0) {
+      notCompletedEl.innerHTML = '<div class="empty-state">Nothing pending.</div>';
+    }
+    if (completed.length === 0) {
+      completedEl.innerHTML = '<div class="empty-state">No completed tasks yet.</div>';
+    }
+
+    notCompleted.forEach(t => notCompletedEl.appendChild(taskCard(t)));
+    completed.forEach(t => completedEl.appendChild(taskCard(t)));
+  }
+
+  function taskCard(task) {
+    const card = document.createElement('div');
+    card.className = 'task-card';
+    card.innerHTML = `
+      <div class="task-title">${escapeHtml(task.title)}</div>
+      <div class="task-meta">${escapeHtml(task.projectName)}</div>
+      <div class="status-toggle">
+        <button data-status="Not completed" class="${task.status === 'Not completed' ? 'selected not-complete' : ''}">Not completed</button>
+        <button data-status="Complete" class="${task.status === 'Complete' ? 'selected complete' : ''}">Complete</button>
+      </div>
+    `;
+    card.querySelectorAll('.status-toggle button').forEach(btn => {
+      btn.addEventListener('click', () => updateStatus(task.taskId, btn.dataset.status));
+    });
+    return card;
+  }
+
+  async function updateStatus(taskId, status) {
+    try {
+      await api(`/api/tasks/${taskId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+      loadTasks();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  // ---------- Team / Executive panel ----------
+  async function loadMembers() {
+    if (!isExecutive()) return;
+    try {
+      const data = await api('/api/auth/members');
+      renderMembers(data.members || []);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  function renderMembers(members) {
+    const listEl = document.getElementById('member-list');
+    listEl.innerHTML = '';
+    if (members.length === 0) {
+      listEl.innerHTML = '<div class="empty-state">No members yet.</div>';
+      return;
+    }
+    members.forEach(m => {
+      const row = document.createElement('div');
+      row.className = 'member-row';
+      row.innerHTML = `
+        <span class="member-id">${escapeHtml(m.memberId)}</span>
+        <span class="member-role">${escapeHtml(m.role)}</span>
+      `;
+      listEl.appendChild(row);
+    });
+  }
+
+  document.getElementById('show-create-form-btn').addEventListener('click', () => {
+    document.getElementById('create-member-form').classList.remove('hidden');
+  });
+
+  document.getElementById('cancel-create-btn').addEventListener('click', () => {
+    document.getElementById('create-member-form').classList.add('hidden');
+  });
+
+  document.getElementById('create-member-btn').addEventListener('click', async () => {
+    const fullName = document.getElementById('new-fullname').value.trim();
+    const role = document.getElementById('new-role').value;
+    const password = document.getElementById('new-password').value;
+    const errorEl = document.getElementById('create-member-error');
+    errorEl.textContent = '';
+
+    if (!fullName || !password) {
+      errorEl.textContent = 'Full name and password are required.';
+      return;
+    }
+
+    try {
+      await api('/api/auth/create-member', {
+        method: 'POST',
+        body: JSON.stringify({ fullName, role, password }),
+      });
+      document.getElementById('new-fullname').value = '';
+      document.getElementById('new-password').value = '';
+      document.getElementById('create-member-form').classList.add('hidden');
+      loadMembers();
+    } catch (err) {
+      errorEl.textContent = err.message;
+    }
+  });
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str ?? '';
+    return div.innerHTML;
+  }
+
+  // ---------- Boot ----------
+  if (token && currentUser) {
+    enterApp();
+  } else {
+    showScreen(false);
+  }
+</script>
+</body>
+</html>
